@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
+from trading.data import validate, BAR
+from trading.ledger import finite_number
 
 
 def ema(s, n): return s.ewm(span=n, adjust=False, min_periods=n).mean()
@@ -28,24 +30,39 @@ def zscore(s,n):
 
 @dataclass
 class Params:
-    risk_per_trade=0.0025
-    daily_loss_limit=0.015
-    weekly_loss_limit=0.03
-    max_drawdown=0.05
-    max_leverage=2.0
-    min_confidence=78.0
-    min_rr=1.5
-    fee_bps=4.0
-    slippage_bps=2.0
-    max_bars=288  # 24h on 5m
-    atr_stop_mult=1.8
+    initial_capital: float = 2000
+    risk_per_trade: float = 0.0025
+    daily_loss_limit: float = 0.015
+    weekly_loss_limit: float = 0.03
+    max_drawdown: float = 0.05
+    max_leverage: float = 2.0
+    min_confidence: float = 78.0
+    min_rr: float = 1.5
+    fee_bps: float = 4.0
+    slippage_bps: float = 2.0
+    max_bars: int = 288
+    atr_stop_mult: float = 1.8
+
+    def validate(self):
+        for key, value in vars(self).items():
+            value = finite_number(key, value)
+            if value < 0:
+                raise ValueError(f'Invalid parameter: {key}')
+        if self.fee_bps >= 10000 or self.slippage_bps >= 10000:
+            raise ValueError('Fee and slippage must be less than 10000 bps')
+        for key in ('risk_per_trade','daily_loss_limit','weekly_loss_limit','max_drawdown'):
+            if not 0 < getattr(self, key) < 1:
+                raise ValueError(f'Invalid fraction: {key}')
+        if min(self.initial_capital, self.atr_stop_mult, self.max_leverage) <= 0 or self.max_bars < 1 or int(self.max_bars) != self.max_bars:
+            raise ValueError('Invalid capital, leverage, stop or duration')
 
 class Strategy:
     def __init__(self,p=None): self.p=p or Params()
 
     def features(self, raw):
-        df=raw.copy(); df.index=pd.to_datetime(df.timestamp,utc=True) if 'timestamp' in df else pd.to_datetime(df.index,utc=True)
-        df=df.sort_index().loc[~df.index.duplicated()]
+        df=validate(raw)
+        # Settlement costs belong to accounting, never to the signal feature frame.
+        df=df.drop(columns=['funding_event_rate','funding_event_rate_available_at'],errors='ignore')
         for c in ['open','high','low','close','volume']:
             df[c]=pd.to_numeric(df[c],errors='coerce')
         if 'funding_rate' not in df: df['funding_rate']=0.0
@@ -53,25 +70,29 @@ class Strategy:
         if 'orderbook_imbalance' not in df: df['orderbook_imbalance']=0.0
         if 'spread_bps' not in df: df['spread_bps']=0.0
         if 'news_sentiment' not in df: df['news_sentiment']=0.0
-        return df.dropna(subset=['open','high','low','close','volume'])
+        df['oi_chg'] = df.open_interest.pct_change(fill_method=None).replace([np.inf,-np.inf],np.nan)
+        return df
 
     def _tf(self, df, rule):
-        x=df[['open','high','low','close','volume','funding_rate','open_interest','orderbook_imbalance','spread_bps','news_sentiment']].resample(rule,label='right',closed='right').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','funding_rate':'last','open_interest':'last','orderbook_imbalance':'last','spread_bps':'last','news_sentiment':'last'}).dropna(subset=['open','high','low','close'])
+        groups=df.resample(rule,label='right',closed='left',origin='epoch')
+        x=groups.agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','funding_rate':'last','open_interest':'last','orderbook_imbalance':'last','spread_bps':'last','news_sentiment':'last'})
+        x=x.loc[groups.close.count()==int(pd.Timedelta(rule)/BAR)]
         x['atr']=atr(x,14); x['rsi']=rsi(x.close,14); x['adx']=adx(x,14)
         x['ema20']=ema(x.close,20); x['ema50']=ema(x.close,50); x['ema200']=ema(x.close,200)
         x['vwap_proxy']= (x.close*x.volume).rolling(20,min_periods=20).sum()/x.volume.rolling(20,min_periods=20).sum()
         x['ret']=x.close.pct_change(); x['vol_z']=zscore(x.volume,26); x['mom']=x.close.pct_change(12)
         x['hh']=x.high.rolling(20,min_periods=20).max().shift(1); x['ll']=x.low.rolling(20,min_periods=20).min().shift(1)
-        x['oi_chg']=x.open_interest.pct_change().replace([np.inf,-np.inf],np.nan).fillna(0)
+        x['oi_chg']=x.open_interest.pct_change(fill_method=None).replace([np.inf,-np.inf],np.nan)
         return x
 
     def prepare(self, raw):
         base=self.features(raw); t5=base.copy(); t15=self._tf(base,'15min'); t1=self._tf(base,'1h'); t4=self._tf(base,'4h')
-        # Shift higher TF features by one completed candle before aligning to 5m.
+        # Decisions use completed base bars and HTFs labeled by close time.
+        t5.index=t5.index+BAR
         cols=[c for c in t4.columns if c not in []]
-        a=t4[cols].shift(1).reindex(t5.index,method='ffill').add_prefix('h4_')
-        b=t1[cols].shift(1).reindex(t5.index,method='ffill').add_prefix('h1_')
-        c=t15[cols].shift(1).reindex(t5.index,method='ffill').add_prefix('m15_')
+        a=t4[cols].reindex(t5.index,method='ffill').add_prefix('h4_')
+        b=t1[cols].reindex(t5.index,method='ffill').add_prefix('h1_')
+        c=t15[cols].reindex(t5.index,method='ffill').add_prefix('m15_')
         out=pd.concat([t5,a,b,c],axis=1)
         return out
 

@@ -1,0 +1,53 @@
+﻿Observed: 2026-11-12, after preparation of the OpenCode review packet
+Branch:
+master
+HEAD:
+19d6f21e15243558b29cdf048fb5177d4f489729 Preserve original project before M0-M2 repairs
+Exact status: git status --short --untracked-files=all
+ M README.md
+ M backtest.py
+ M strategy.py
+?? .gitignore
+?? docs/M0-M2.md
+?? docs/M3.md
+?? docs/M4-READINESS.md
+?? docs/PHASE-A-PLAN.md
+?? docs/coordination/ASSIGNMENTS.md
+?? docs/coordination/CHECKPOINT-STATUS.txt
+?? docs/coordination/M3-SOURCE-MANIFEST.json
+?? docs/coordination/M3-STATUS.md
+?? docs/coordination/M3-TESTS.txt
+?? docs/coordination/OC-M3-REVIEW-MANIFEST.json
+?? docs/coordination/OC-M3-REVIEW.md
+?? docs/coordination/PHASE-A-SOURCE-MANIFEST.json
+?? docs/coordination/PHASE-A-TESTS.txt
+?? docs/coordination/README.md
+?? docs/coordination/REPORT_TEMPLATE.md
+?? docs/coordination/TASK_TEMPLATE.md
+?? scan_patterns.py
+?? snapshots/m0-m2-before-review-fixes/.gitignore
+?? snapshots/m0-m2-before-review-fixes/README.md
+?? snapshots/m0-m2-before-review-fixes/backtest.py
+?? snapshots/m0-m2-before-review-fixes/docs/M0-M2.md
+?? snapshots/m0-m2-before-review-fixes/download_binance.py
+?? snapshots/m0-m2-before-review-fixes/requirements.txt
+?? snapshots/m0-m2-before-review-fixes/strategy.py
+?? snapshots/m0-m2-before-review-fixes/test_backtester.py
+?? snapshots/m0-m2-before-review-fixes/tests/test_core.py
+?? snapshots/m0-m2-before-review-fixes/trading/__init__.py
+?? snapshots/m0-m2-before-review-fixes/trading/data.py
+?? snapshots/m0-m2-before-review-fixes/trading/ledger.py
+?? tests/test_core.py
+?? tests/test_pattern_engine.py
+?? tests/test_patterns_geometry.py
+?? tests/test_review_fixes.py
+?? trading/__init__.py
+?? trading/data.py
+?? trading/ledger.py
+?? trading/pattern_context.py
+?? trading/pattern_engine.py
+?? trading/patterns.py
+Staged paths: git diff --cached --name-only
+Verification: all six M3 and all eleven Phase A source hashes match saved manifests; original snapshot has no Git diff; git diff --check passed with existing LF/CRLF warnings.
+Tests: not rerun; saved 2026-11-08 transcript reports 72 tests passed.
+Gates: M4 implementation must wait for secured Git checkpoint, received and triaged OpenCode review, verified provider runtime connectivity, and verified provider/content licensing. Codex remains sole code writer. No dependency installation or model change without user approval.
