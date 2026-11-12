@@ -129,7 +129,7 @@ class PatternEngine:
     def __post_init__(self):
         if not isinstance(self.config, PatternConfig) or not isinstance(self.context_config, ContextConfig):
             raise ValueError('Typed pattern and context configurations required')
-        payload = json.dumps({'algorithm': 'M3-v1', 'geometry': asdict(self.config),
+        payload = json.dumps({'algorithm': 'M3-v2', 'geometry': asdict(self.config),
                               'context': asdict(self.context_config)}, sort_keys=True)
         object.__setattr__(self, 'configuration_id', sha256(payload.encode()).hexdigest()[:16])
 
@@ -234,7 +234,7 @@ def evaluate_setup(event, candle, *, as_of, context=None, context_config=None):
 
 
 class SetupTracker:
-    """An in-memory research lifecycle; stable IDs prevent duplicate confirmations."""
+    """An in-memory, per-event chronological lifecycle with duplicate prevention."""
     def __init__(self, context_config=None):
         self.context_config = context_config
         self._events = {}

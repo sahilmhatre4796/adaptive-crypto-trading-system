@@ -139,24 +139,26 @@ def assess_context(match: PatternGeometry, prior_direction, pattern_range, conte
     else:
         if context.direction_closed_at is not None and as_of-context.direction_closed_at > pd.Timedelta(hours=1):
             missing.append('stale_1h_direction')
+        elif context.higher_direction == 'UNKNOWN':
+            missing.append('higher_direction')
+        elif classification != 'NEUTRAL':
+            if context.higher_direction not in (classification, 'NEUTRAL'):
+                conflicting.append('higher_direction_conflict')
+            else:
+                supporting.append('higher_direction')
+                score += 10
         if context.regime_closed_at is not None and as_of-context.regime_closed_at > pd.Timedelta(hours=4):
             missing.append('stale_4h_regime')
-        if context.higher_direction == 'UNKNOWN':
-            missing.append('higher_direction')
-        elif context.higher_direction not in (classification, 'NEUTRAL'):
-            conflicting.append('higher_direction_conflict')
-        else:
-            supporting.append('higher_direction')
-            score += 10
-        if context.regime in ('UNKNOWN', 'UNCERTAIN'):
+        elif context.regime in ('UNKNOWN', 'UNCERTAIN'):
             missing.append('regime')
         elif context.regime == 'ABNORMAL':
             conflicting.append('abnormal_market')
-        elif context.regime not in (classification, 'RANGE'):
-            conflicting.append('regime_conflict')
-        else:
-            supporting.append('regime')
-            score += 5
+        elif classification != 'NEUTRAL':
+            if context.regime not in (classification, 'RANGE'):
+                conflicting.append('regime_conflict')
+            else:
+                supporting.append('regime')
+                score += 5
         distance = context.support_distance_atr if classification == 'BULLISH' else context.resistance_distance_atr
         if classification == 'NEUTRAL' or distance is None:
             missing.append('location')
