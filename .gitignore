@@ -4,3 +4,30 @@ __pycache__/
 .venv/
 runs/
 tmpz6tpagpv/
+
+# Local databases and journal/operational records — never publish
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.log
+
+# Tool/cache artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.playwright-mcp/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Internal coordination notes and preserved pre-repair source — kept locally, not published
+docs/coordination/
+snapshots/
+
+# Internal working records (status checkpoints, handoffs) — kept locally, not published
+docs/M13-FRESH-SESSION.md
+docs/CHECKPOINT-M0-M3.md
+docs/M4-READINESS.md
+docs/PHASE-A-PLAN.md

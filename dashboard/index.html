@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Adaptive Trading · Command Center</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div id="login" class="login-shell" hidden>
+    <form id="login-form" class="login-card">
+      <div class="brand-mark">AT</div>
+      <p class="eyebrow">LOCAL MONITORING</p>
+      <h1>Command Center</h1>
+      <p>Sign in to view journaled trading activity. This dashboard cannot place orders.</p>
+      <label for="password">Dashboard password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit" class="button primary">Unlock dashboard</button>
+      <p id="login-error" class="form-error" role="alert"></p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark small">AT</span><span><strong>Adaptive Trading</strong><small>COMMAND CENTER</small></span></div>
+      <nav id="nav" aria-label="Main navigation">
+        <button data-page="dashboard" class="active">Dashboard</button>
+        <button data-page="trading">Trading</button>
+        <button data-page="positions">Open Positions</button>
+        <button data-page="history">Trade History</button>
+        <button data-page="signals">Strategy Signals</button>
+        <button data-page="analytics">Analytics</button>
+        <button data-page="risk">Risk Management</button>
+        <button data-page="health">System Health</button>
+        <button data-page="settings">Settings</button>
+      </nav>
+      <button id="logout" class="text-button">Sign out</button>
+    </header>
+
+    <main class="shell">
+      <div class="page-heading">
+        <div><p class="eyebrow">BTC / ETH · USDⓈ-M</p><h1 id="page-title">Dashboard</h1><p id="page-subtitle" class="muted">Read-only command center</p></div>
+        <div class="heading-actions"><label class="mode-label" for="mode">Monitoring mode</label><select id="mode"><option value="paper">PAPER TRADING</option><option value="real">REAL ACCOUNT — READ ONLY</option></select></div>
+      </div>
+      <div id="notice" class="notice" role="status"></div>
+      <div class="status-strip">
+        <span id="system-status" class="status-pill">Checking system</span>
+        <span id="mode-status">Mode —</span>
+        <span id="market-status">Market BTCUSDT / ETHUSDT</span>
+        <span id="connection-status">Connection —</span>
+        <span id="last-update">Last data update —</span>
+      </div>
+
+      <section id="dashboard" class="page active">
+        <div class="section-title"><h2>Account overview</h2><span id="account-source" class="muted"></span></div>
+        <div id="account-cards" class="metric-grid"></div>
+        <div class="two-col">
+          <section class="panel"><div class="section-title"><h2>Market overview</h2><span class="muted">Last finalized 5m close</span></div><div id="market-cards" class="market-grid"></div></section>
+          <section class="panel"><div class="section-title"><h2>Portfolio equity</h2><span class="muted">Authoritative M8 snapshots</span></div><canvas id="overview-chart" height="230" aria-label="Portfolio equity curve"></canvas><p id="overview-empty" class="empty"></p></section>
+        </div>
+        <div class="two-col">
+          <section class="panel"><div class="section-title"><h2>Open positions</h2><button class="text-button jump" data-jump="positions">View all</button></div><div id="overview-positions"></div></section>
+          <section class="panel"><div class="section-title"><h2>Recent strategy decisions</h2><button class="text-button jump" data-jump="signals">View all</button></div><div id="overview-signals"></div></section>
+        </div>
+      </section>
+
+      <section id="trading" class="page">
+        <div class="section-title"><h2>Simulated order lifecycle</h2><span class="muted">M8 approval → M9.1 admission → M12 execution</span></div>
+        <div class="panel"><div id="orders-table"></div></div>
+        <div class="panel safe-banner"><strong>Execution boundary</strong><p>Dashboard controls never submit orders, change risk limits, or start the runtime. Paper execution requires the separately configured, approved trading process. Real-money execution is disabled.</p></div>
+      </section>
+
+      <section id="positions" class="page"><div class="section-title"><h2>Open positions</h2><span class="muted">Actual account source shown above</span></div><div class="panel"><div id="positions-table"></div></div></section>
+
+      <section id="history" class="page">
+        <div class="section-title"><h2>Completed trades</h2><span id="trade-count" class="muted"></span></div>
+        <div class="panel"><div class="filters">
+          <label>Search<input id="trade-search" type="search" placeholder="Trade ID, asset, reason"></label>
+          <label>From<input id="trade-from" type="date"></label><label>To<input id="trade-to" type="date"></label>
+          <label>Asset<select id="trade-asset"><option value="">All assets</option><option>BTCUSDT</option><option>ETHUSDT</option></select></label>
+          <label>Side<select id="trade-side"><option value="">Both sides</option><option>LONG</option><option>SHORT</option></select></label>
+          <label>Result<select id="trade-result"><option value="">All results</option><option value="profit">Profitable</option><option value="loss">Loss-making</option></select></label>
+        </div><div id="history-table"></div><div class="pager"><button id="page-prev" class="button">Previous</button><span id="page-label"></span><button id="page-next" class="button">Next</button></div></div>
+      </section>
+
+      <section id="signals" class="page"><div class="section-title"><h2>Strategy signals</h2><span class="muted">Evaluations are not trades</span></div><div class="panel"><div id="signals-table"></div></div></section>
+
+      <section id="analytics" class="page">
+        <div class="section-title"><h2>Performance analytics</h2><span class="muted">Only completed simulated trades and M8 snapshots</span></div>
+        <div id="analytics-cards" class="metric-grid"></div>
+        <div class="two-col"><div class="panel"><h3>Equity curve</h3><canvas id="equity-chart" height="250" aria-label="Equity curve"></canvas><p id="equity-empty" class="empty"></p></div><div class="panel"><h3>Daily P&amp;L</h3><canvas id="daily-chart" height="250" aria-label="Daily profit and loss"></canvas><p id="daily-empty" class="empty"></p></div></div>
+        <div class="two-col"><div class="panel"><h3>Long vs short</h3><div id="side-analytics"></div></div><div class="panel"><h3>BTC vs ETH</h3><div id="asset-analytics"></div></div></div>
+      </section>
+
+      <section id="risk" class="page"><div class="section-title"><h2>Risk management</h2><span class="muted">M8 remains the sole authority</span></div><div id="risk-cards" class="metric-grid"></div><div class="panel"><h3>Risk decisions</h3><div id="risk-table"></div></div><div class="panel safe-banner"><strong>Selected policy</strong><p>Maximum planned loss per trade is 10% of current equity in the accepted M8 default. This experimental policy is displayed only; it cannot be edited here.</p></div></section>
+
+      <section id="health" class="page"><div class="section-title"><h2>System health</h2><span class="muted">Journal facts and last observed receipts</span></div><div id="health-cards" class="metric-grid"></div><div class="panel"><h3>Latest status</h3><div id="health-detail"></div></div></section>
+
+      <section id="settings" class="page"><div class="section-title"><h2>Settings &amp; safety</h2></div><div class="panel settings-copy"><h3>Monitoring only</h3><p>Switching modes changes only this view. It does not transfer balances, alter positions, start trading, or change the M8 risk policy.</p><p><strong>REAL ACCOUNT — READ ONLY</strong> uses an optional read-only Binance USD-M account key configured outside the browser. No account key or secret is entered here.</p><p>Live order creation, modification, leverage changes, withdrawals, and real-money execution are unavailable in this dashboard.</p><p id="settings-source" class="muted"></p></div></section>
+    </main>
+    <footer>Adaptive Trading Backtester · Local, read-only monitoring · Prices are finalized candle closes, not executable quotes.</footer>
+  </div>
+
+  <dialog id="trade-detail"><div class="dialog-head"><h2>Trade detail</h2><button id="detail-close" class="text-button" aria-label="Close detail">Close</button></div><div id="trade-detail-body"></div></dialog>
+</body>
+</html>
