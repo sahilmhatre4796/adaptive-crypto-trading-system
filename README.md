@@ -117,7 +117,7 @@ of current strategy performance.
 ## Setup
 
 ```bash
-git clone <your-fork-url> && cd adaptive-crypto-trading-system
+git clone https://github.com/sahilmhatre4796/adaptive-crypto-trading-system.git && cd adaptive-crypto-trading-system
 python -m venv .venv && . .venv/Scripts/activate   # Windows
 # source .venv/bin/activate                         # macOS/Linux
 pip install -r requirements.txt
